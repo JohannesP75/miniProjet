@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>miniProjet API</title>
+        <script>
+            /*
+                Créer la table
+            */
+            function generate_table(listTasks){
+                var tableListTasks = document.getElementById("list_tasks");
+
+                while(tableListTasks.firstChild) {
+                    tableListTasks.removeChild(tableListTasks.firstChild);
+                }
+
+                listTasks.forEach((task)=>{
+                    let row=document.createElement("tr");
+
+                    let cell=document.createElement("td");
+                    cell.innerText=task["name"];
+                    row.appendChild(cell);
+
+                    cell=document.createElement("td");
+                    cell.innerText=task["dueDate"];
+                    row.appendChild(cell);
+
+                    cell=document.createElement("td");
+                    cell.innerText=task["isDone"];
+                    row.appendChild(cell);
+
+                    tableListTasks.appendChild(row);
+                });
+            }
+
+            /*
+                Pour obtenir toutes les taches
+            */
+            function get_all_tasks(){
+                let listTasks=[];
+
+                fetch("http://localhost:3000/tasks").then((res)=>{
+                    return res.json();
+                }).then((data)=>{
+                    console.log(`data : ${data}`);
+                    
+                    generate_table(data);
+                });
+            }
+
+            /*
+                Pour obtenir seulement les taches non accomplies
+            */
+            function get_only_nondone_tasks(){
+                let listTasks=[];
+
+                fetch("http://localhost:3000/tasks/undone").then((res)=>{
+                    return res.json();
+                }).then((data)=>{
+                    console.log(`data : ${data}`);
+                    
+                    generate_table(data);
+                });
+            }
+        </script>
+    </head>
+    <body>
+        <button onclick="get_all_tasks()">Full list</button>
+        <button onclick="get_only_nondone_tasks()">Partial list</button>
+        <table>
+            <thead>
+                <th>Tache</th>
+                <th>Date</th>
+                <th>Accomplissement</th>
+            </thead>
+            <tbody id="list_tasks"></tbody>
+        </table>
+    </body>
+</html>
