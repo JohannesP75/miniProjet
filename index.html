@@ -15,25 +15,44 @@
                 }
 
                 listTasks.forEach((task)=>{
-                    let row=document.createElement("tr");
+                    if(task!=null){
+                        let row=document.createElement("tr");
 
-                    let cell=document.createElement("td");
-                    cell.innerText=task["id"];
-                    row.appendChild(cell);
+                        let cell=document.createElement("th");
+                        cell.innerText=task["id"];
+                        row.appendChild(cell);
 
-                    cell=document.createElement("td");
-                    cell.innerText=task["name"];
-                    row.appendChild(cell);
+                        cell=document.createElement("td");
+                        cell.innerText=task["name"];
+                        row.appendChild(cell);
 
-                    cell=document.createElement("td");
-                    cell.innerText=task["dueDate"];
-                    row.appendChild(cell);
+                        cell=document.createElement("td");
+                        cell.innerText=task["dueDate"];
+                        row.appendChild(cell);
 
-                    cell=document.createElement("td");
-                    cell.innerText=task["isDone"];
-                    row.appendChild(cell);
+                        cell=document.createElement("td");
+                        cell.innerText=task["isDone"];
+                        row.appendChild(cell);
 
-                    tableListTasks.appendChild(row);
+                        cell=document.createElement("td");
+
+                        var button=document.createElement("button");
+                        button.innerText="Supprimer";
+                        button.setAttribute("onclick", `delete_task(${task["id"]})`)
+                        cell.appendChild(button);
+
+                        if(!task["isDone"]){
+                            button=document.createElement("button");
+                            button.innerText="Accomplir";
+                            button.setAttribute("onclick", `fulfill_task(${task["id"]})`)
+                            cell.appendChild(button);
+                        }
+                        
+
+                        row.appendChild(cell);
+
+                        tableListTasks.appendChild(row);
+                        }
                 });
             }
 
@@ -43,7 +62,7 @@
             function get_all_tasks(){
                 let listTasks=[];
 
-                fetch("http://localhost:3000/tasks").then((res)=>{
+                fetch("http://localhost:3000/tasks/all").then((res)=>{
                     return res.json();
                 }).then((data)=>{
                     console.log(`data : ${data}`);
@@ -77,7 +96,7 @@
                 isDone: document.getElementById("new_task_done").checked.toString()
             };
 
-            const response = await fetch("http://localhost:3000/new_task", {
+            const response = await fetch("http://localhost:3000/task/new", {
                 method: "POST",
                 mode: "cors",
                 cache: "no-cache",
@@ -89,7 +108,34 @@
                 referrerPolicy: "no-referrer",
                 body: JSON.stringify(data),
             });
+           }
 
+           async function delete_task(id){
+            const response = await fetch("http://localhost:3000/task/delete/"+id, {
+                method: "DELETE",
+                mode: "cors",
+                cache: "no-cache",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                redirect: "follow",
+                referrerPolicy: "no-referrer"
+            });
+           }
+
+           async function fulfill_task(id){
+            const response = await fetch("http://localhost:3000/task/fulfill/"+id, {
+                method: "PATCH",
+                mode: "cors",
+                cache: "no-cache",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                redirect: "follow",
+                referrerPolicy: "no-referrer"
+            });
            }
         </script>
     </head>

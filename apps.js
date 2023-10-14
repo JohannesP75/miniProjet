@@ -46,6 +46,8 @@ let MAX_ID=Math.max(...listTasks.map((task)=>task["id"]));
 
 app.use(cors());
 
+app.use(express.json());
+
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.listen(PORT_MINIPROJECT, ()=>{
@@ -57,7 +59,7 @@ app.get('/', function (req, res) {
     res.sendFile(__dirname + "/index.html");
 });
 
-app.get('/tasks', function(req, res){
+app.get('/tasks/all', function(req, res){
     res.send(listTasks);
 });
 
@@ -72,19 +74,33 @@ app.get('/tasks/undone', function(req, res){
 });
 
 //  POST
-app.post('/new_task', function (req, res) {
+app.post('/task/new', function (req, res) {
     console.log(`Got body : ${req.body}`);
     MAX_ID++;
     let newTask=req.body;
     newTask["id"]=MAX_ID;
-    listTasks.push(req.body);
+    listTasks.push(newTask);
+    console.log(`newTask : ${newTask}`);
     
     res.sendStatus(200);
 });
 
 // DELETE
-app.delete('/delete_task/:id', function (req, res) {
-    listTasks.delete();
+app.delete('/task/delete/:id', function (req, res) {
+    var idTask=req.params.id;
+    
+    if(idTask in listTasks)
+        delete listTasks[idTask];
     
     res.sendStatus(200);
 });
+
+// PATCH
+app.patch('/task/fulfill/:id', function (req, res) {
+    var idTask=req.params.id;
+    
+    if(idTask in listTasks)
+        listTasks[idTask]["isDone"]=true;
+    
+    res.sendStatus(200);
+})
