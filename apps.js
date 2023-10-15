@@ -8,6 +8,13 @@ const bodyParser = require('body-parser');
 // Constants
 const PORT_MINIPROJECT=3000;
 
+var con = mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    password: "",
+    database: "db_miniproject_tasks"
+  });
+
 let listTasks=[
     {
         id: 0,
@@ -60,28 +67,35 @@ app.get('/', function (req, res) {
 });
 
 app.get('/tasks/all', function(req, res){
-    res.send(listTasks);
+    let sql="SELECT * FROM tasks";
+
+    con.query(sql, function(error, results, fields){
+        if (error) throw error;
+
+        res.send(results);
+    });
 });
 
 app.get('/tasks/undone', function(req, res){
-    let S=[];
+    let sql="SELECT * FROM tasks WHERE isDone=1";
 
-    listTasks.forEach((task)=>{
-        if(!task["isDone"])S.push(task);
+    con.query(sql, function(error, results, fields){
+        if (error) throw error;
+
+        res.send(results);
     });
-
-    res.send(S);
 });
 
 //  POST
 app.post('/task/new', function (req, res) {
     console.log(`Got body : ${req.body}`);
-    MAX_ID++;
-    let newTask=req.body;
-    newTask["id"]=MAX_ID;
-    listTasks.push(newTask);
-    console.log(`newTask : ${newTask}`);
-    
+    let sql="INSERT INTO tasks (name, dueDate, isDone) VALUES (?, ?, ?)";
+
+    con.query(sql, [req.body.name, req.body.dueDate, req.body.isDone], function(error, results, fields){
+        if (error) throw err;
+        console.log("Number of tasks inserted : " + results.affectedRows);
+    });
+
     res.sendStatus(200);
 });
 
@@ -89,8 +103,12 @@ app.post('/task/new', function (req, res) {
 app.delete('/task/delete/:id', function (req, res) {
     var idTask=req.params.id;
     
-    if(idTask in listTasks)
-        delete listTasks[idTask];
+    let sql="DELETE FROM tasks WHERE id = ?";
+
+    con.query(sql, [idTask], function(error, results, fields){
+        if (error) throw error;
+        console.log("Number of tasks deleted : " + results.affectedRows);
+    });
     
     res.sendStatus(200);
 });
@@ -98,23 +116,26 @@ app.delete('/task/delete/:id', function (req, res) {
 // PATCH
 app.patch('/task/fulfill/:id', function (req, res) {
     var idTask=req.params.id;
-    
-    if(idTask in listTasks)
-        listTasks[idTask]["isDone"]=true;
+
+    let sql="UPDATE tasks SET isDone = 1 WHERE id = ?";
+
+    con.query(sql, [idTask], function(error, results, fields){
+        if (error) throw error;
+        console.log("Number of tasks done : " + results.affectedRows);
+    });
     
     res.sendStatus(200);
 })
 
 app.patch('/task/edit/:id', function (req, res) {
     var idTask=req.params.id;
-    
-    if(idTask in listTasks)
-        listTasks[idTask]={
-            id: idTask,
-            name: req.body.name,
-            dueDate: req.body.dueDate,
-            isDone: req.body.isDone
-        };
-    
+
+    let sql="UPDATE tasks SET name = ?, dueDate = ?, isDone = ?  WHERE id = ?";
+
+    con.query(sql, [req.body.name, req.body.dueDate, req.body.isDone, idTask], function(error, results, fields){
+        if (error) throw error;
+        console.log("Number of tasks updated : " + results.affectedRows);
+    });
+
     res.sendStatus(200);
 })
