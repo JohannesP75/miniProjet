@@ -16,38 +16,70 @@
 
                 listTasks.forEach((task)=>{
                     if(task!=null){
+                        let idTask=task["id"];
                         let row=document.createElement("tr");
 
                         let cell=document.createElement("th");
-                        cell.innerText=task["id"];
+                        cell.innerText=idTask;
                         row.appendChild(cell);
 
+                        // Cell name
                         cell=document.createElement("td");
-                        cell.innerText=task["name"];
+                        let input=document.createElement("input");
+                        input.setAttribute("type", "text");
+                        input.setAttribute("disabled", "true");
+                        input.setAttribute("value", task["name"]);
+                        input.setAttribute("id", "input-name-"+idTask);
+                        cell.appendChild(input);
                         row.appendChild(cell);
 
+                        // Cell date
                         cell=document.createElement("td");
-                        cell.innerText=task["dueDate"];
+                        input=document.createElement("input");
+                        input.setAttribute("type", "date");
+                        input.setAttribute("disabled", "true");
+                        input.setAttribute("value", task["dueDate"]);
+                        input.setAttribute("id", "input-date-"+idTask);
+                        cell.appendChild(input);
                         row.appendChild(cell);
 
+                        // Cell isDone
                         cell=document.createElement("td");
-                        cell.innerText=task["isDone"];
+                        input=document.createElement("input");
+                        input.setAttribute("type", "checkbox");
+                        input.setAttribute("disabled", "true");
+                        input.setAttribute("checked", task["isDone"]);
+                        input.setAttribute("id", "input-isdone-"+idTask);
+                        cell.appendChild(input);
                         row.appendChild(cell);
 
+                        // Actions
                         cell=document.createElement("td");
 
                         var button=document.createElement("button");
-                        button.innerText="Supprimer";
+                        button.innerText="Delete";
                         button.setAttribute("onclick", `delete_task(${task["id"]})`)
+                        cell.appendChild(button);
+
+                        button=document.createElement("button");
+                        button.innerText="Edit";
+                        button.setAttribute("onclick", `activate_edit_task(${task["id"]})`)
+                        button.setAttribute("id", `button-edit-${task["id"]}`)
                         cell.appendChild(button);
 
                         if(!task["isDone"]){
                             button=document.createElement("button");
-                            button.innerText="Accomplir";
+                            button.innerText="Done";
                             button.setAttribute("onclick", `fulfill_task(${task["id"]})`)
                             cell.appendChild(button);
                         }
-                        
+
+                        button=document.createElement("button");
+                        button.innerText="Send";
+                        button.setAttribute("onclick", `send_edited_task(${task["id"]})`);
+                        button.setAttribute("id", `button-send-edit-${task["id"]}`);
+                        button.disabled=true;
+                        cell.appendChild(button);
 
                         row.appendChild(cell);
 
@@ -137,9 +169,43 @@
                 referrerPolicy: "no-referrer"
             });
            }
+
+           function activate_edit_task(id){
+            document.getElementById("input-name-"+id).disabled=false;
+            document.getElementById("input-date-"+id).disabled=false;
+            document.getElementById("input-isdone-"+id).disabled=false;
+            document.getElementById("button-send-edit-"+id).disabled=false;
+           }
+
+           async function send_edited_task(id){
+            let data={
+                id: id,
+                name: document.getElementById("input-name-"+id).value,
+                dueDate: document.getElementById("input-date-"+id).value,
+                isDone: document.getElementById("input-isdone-"+id).checked.toString()
+            };
+
+            const response = await fetch("http://localhost:3000/task/edit/"+id, {
+                method: "PATCH",
+                mode: "cors",
+                cache: "no-cache",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                redirect: "follow",
+                referrerPolicy: "no-referrer",
+                body: JSON.stringify(data),
+            });
+
+            document.getElementById("input-name-"+id).disabled=true;
+            document.getElementById("input-date-"+id).disabled=true;
+            document.getElementById("input-isdone-"+id).disabled=true;
+            document.getElementById("button-send-edit-"+id).disabled=true;
+           }
         </script>
     </head>
-    <body>
+    <body onload="get_all_tasks()">
         <button onclick="get_all_tasks()">Full list</button>
         <button onclick="get_only_nondone_tasks()">Partial list</button>
         <table>

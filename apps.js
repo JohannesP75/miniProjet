@@ -104,3 +104,17 @@ app.patch('/task/fulfill/:id', function (req, res) {
     
     res.sendStatus(200);
 })
+
+app.patch('/task/edit/:id', function (req, res) {
+    var idTask=req.params.id;
+    
+    if(idTask in listTasks)
+        listTasks[idTask]={
+            id: idTask,
+            name: req.body.name,
+            dueDate: req.body.dueDate,
+            isDone: req.body.isDone
+        };
+    
+    res.sendStatus(200);
+})
