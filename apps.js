@@ -15,39 +15,6 @@ var con = mysql.createConnection({
     database: "db_miniproject_tasks"
   });
 
-let listTasks=[
-    {
-        id: 0,
-        name: "alpha",
-        dueDate: "2023-12-25",
-        isDone: false
-    },
-    {
-        id: 1,
-        name: "beta",
-        dueDate: "2022-12-19",
-        isDone: false
-    },
-    {
-        id: 2,
-        name: "gamma",
-        dueDate: "2023-07-14",
-        isDone: true
-    },
-    {
-        id: 3,
-        name: "delta",
-        dueDate: "2020-01-04",
-        isDone: false
-    },
-    {
-        id: 4,
-        name: "epsilon",
-        dueDate: "2021-05-17",
-        isDone: true
-    }
-];
-
 //  Initialisation
 let MAX_ID=Math.max(...listTasks.map((task)=>task["id"]));
 
@@ -86,13 +53,25 @@ app.get('/tasks/undone', function(req, res){
     });
 });
 
+app.get('/task/:id', function (req, res) {
+    var idTask=req.params.id;
+    
+    let sql="SELECT * FROM tasks WHERE id = ?";
+
+    con.query(sql, [idTask], function(error, results, fields){
+        if (error) throw error;
+        console.log("Number of tasks found : " + results.affectedRows);
+        res.send(results);
+    });
+});
+
 //  POST
 app.post('/task/new', function (req, res) {
     console.log(`Got body : ${req.body}`);
     let sql="INSERT INTO tasks (name, dueDate, isDone) VALUES (?, ?, ?)";
 
     con.query(sql, [req.body.name, req.body.dueDate, req.body.isDone], function(error, results, fields){
-        if (error) throw err;
+        if (error) throw error;
         console.log("Number of tasks inserted : " + results.affectedRows);
     });
 

@@ -5,6 +5,15 @@
         <title>miniProjet API</title>
         <script>
             /*
+                Pour avoir, ou non, la liste entière ou seulement les taches non effectuées.
+            */
+            var fullList=true;
+            
+            /*
+                Extraire la date au format JavaScript depuis le format MySQL
+            */
+
+            /*
                 Créer la table
             */
             function generate_table(listTasks){
@@ -38,7 +47,7 @@
                         input=document.createElement("input");
                         input.setAttribute("type", "date");
                         input.setAttribute("disabled", "true");
-                        input.setAttribute("value", task["dueDate"]);
+                        input.setAttribute("value", task["dueDate"].match(/\d{4}-\d{2}-\d{2}/g));
                         input.setAttribute("id", "input-date-"+idTask);
                         cell.appendChild(input);
                         row.appendChild(cell);
@@ -48,7 +57,7 @@
                         input=document.createElement("input");
                         input.setAttribute("type", "checkbox");
                         input.setAttribute("disabled", "true");
-                        input.setAttribute("checked", task["isDone"]);
+                        input.checked=task["isDone"]===1;
                         input.setAttribute("id", "input-isdone-"+idTask);
                         cell.appendChild(input);
                         row.appendChild(cell);
@@ -58,26 +67,26 @@
 
                         var button=document.createElement("button");
                         button.innerText="Delete";
-                        button.setAttribute("onclick", `delete_task(${task["id"]})`)
+                        button.setAttribute("onclick", `delete_task(${idTask})`)
                         cell.appendChild(button);
 
                         button=document.createElement("button");
                         button.innerText="Edit";
                         button.setAttribute("onclick", `activate_edit_task(${task["id"]})`)
-                        button.setAttribute("id", `button-edit-${task["id"]}`)
+                        button.setAttribute("id", `button-edit-${idTask}`)
                         cell.appendChild(button);
 
                         if(!task["isDone"]){
                             button=document.createElement("button");
                             button.innerText="Done";
-                            button.setAttribute("onclick", `fulfill_task(${task["id"]})`)
+                            button.setAttribute("onclick", `fulfill_task(${idTask})`)
                             cell.appendChild(button);
                         }
 
                         button=document.createElement("button");
                         button.innerText="Send";
-                        button.setAttribute("onclick", `send_edited_task(${task["id"]})`);
-                        button.setAttribute("id", `button-send-edit-${task["id"]}`);
+                        button.setAttribute("onclick", `send_edited_task(${idTask})`);
+                        button.setAttribute("id", `button-send-edit-${idTask}`);
                         button.disabled=true;
                         cell.appendChild(button);
 
@@ -93,6 +102,7 @@
             */
             function get_all_tasks(){
                 let listTasks=[];
+                fullList=true;
 
                 fetch("http://localhost:3000/tasks/all").then((res)=>{
                     return res.json();
@@ -104,10 +114,26 @@
             }
 
             /*
+                Pour obtenir la tache d'identifiant id
+            */
+            function get_task(id){
+
+                fetch("http://localhost:3000/task/"+id).then((res)=>{
+                    return res.json();
+                }).then((data)=>{
+                    console.log(`data : ${Object.keys(data[0])} - ${Object.values(data[0])}`);
+                    document.getElementById("input-name-"+id).setAttribute("value", data[0]["name"]);
+                    document.getElementById("input-date-"+id).value=data[0]["dueDate"].match(/\d{4}-\d{2}-\d{2}/g);
+                    document.getElementById("input-isdone-"+id).checked=data[0]["isDone"]===1;
+                });
+            }
+
+            /*
                 Pour obtenir seulement les taches non accomplies
             */
             function get_only_nondone_tasks(){
                 let listTasks=[];
+                fullList=false;
 
                 fetch("http://localhost:3000/tasks/undone").then((res)=>{
                     return res.json();
@@ -125,7 +151,7 @@
             let data={
                 name: document.getElementById("new_task_name").value,
                 dueDate: document.getElementById("new_task_date").value,
-                isDone: document.getElementById("new_task_done").checked.toString()
+                isDone: document.getElementById("new_task_done").checked?1:0
             };
 
             const response = await fetch("http://localhost:3000/task/new", {
@@ -140,6 +166,8 @@
                 referrerPolicy: "no-referrer",
                 body: JSON.stringify(data),
             });
+
+            refresh_table();
            }
 
            async function delete_task(id){
@@ -154,8 +182,13 @@
                 redirect: "follow",
                 referrerPolicy: "no-referrer"
             });
+
+            refresh_table();
            }
 
+           /*
+            Marque une tache comme accomplie
+           */
            async function fulfill_task(id){
             const response = await fetch("http://localhost:3000/task/fulfill/"+id, {
                 method: "PATCH",
@@ -170,13 +203,44 @@
             });
            }
 
+           /*
+            Active l'édition d'une tache
+           */
            function activate_edit_task(id){
+            // Activation des inputs
             document.getElementById("input-name-"+id).disabled=false;
             document.getElementById("input-date-"+id).disabled=false;
             document.getElementById("input-isdone-"+id).disabled=false;
             document.getElementById("button-send-edit-"+id).disabled=false;
+
+            // Mise à jour du bouton
+            var btn_edit=document.getElementById("button-edit-"+id);
+            btn_edit.innerText="Cancel";
+            btn_edit.setAttribute("onclick", `cancel_edit_task(${id})`);
            }
 
+           /*
+            Annule l'édition d'une tache
+           */
+           function cancel_edit_task(id){
+            // Récupération de la tache
+            get_task(id);
+            
+            // Desactivation des inputs
+            document.getElementById("input-name-"+id).disabled=true;
+            document.getElementById("input-date-"+id).disabled=true;
+            document.getElementById("input-isdone-"+id).disabled=true;
+            document.getElementById("button-send-edit-"+id).disabled=true;
+
+            // Mise à jour du bouton
+            var btn_edit=document.getElementById("button-edit-"+id);
+            btn_edit.innerText="Edit";
+            btn_edit.setAttribute("onclick", `activate_edit_task(${id})`);
+           }
+
+           /*
+            Envoie la tache modifiée au serveur
+           */
            async function send_edited_task(id){
             let data={
                 id: id,
@@ -197,12 +261,19 @@
                 referrerPolicy: "no-referrer",
                 body: JSON.stringify(data),
             });
-
-            document.getElementById("input-name-"+id).disabled=true;
-            document.getElementById("input-date-"+id).disabled=true;
-            document.getElementById("input-isdone-"+id).disabled=true;
-            document.getElementById("button-send-edit-"+id).disabled=true;
+            
+            refresh_table();
            }
+
+           /*
+            Actualise la table
+           */
+          function refresh_table(){
+            if(fullList)
+                get_all_tasks();
+            else
+                get_only_nondone_tasks();
+          }
         </script>
     </head>
     <body onload="get_all_tasks()">
